@@ -11,7 +11,7 @@ GoExecutable = require('./goexecutable')
 Godef = require('./godef')
 SplicerSplitter = require('./util/splicersplitter')
 _ = require('underscore-plus')
-{MessagePanelView, LineMessageView, PlainMessageView} = require('atom-message-panel')
+msgpanel = require('./util/message-panel')
 path = require('path')
 os = require('os')
 async = require('async')
@@ -41,8 +41,6 @@ class Dispatch
     @gobuild = new Gobuild(this)
     @gocover = new Gocover(this)
     @godef = new Godef(this)
-
-    @messagepanel = new MessagePanelView({title: '<span class="icon-diff-added"></span> go-plus', rawTitle: true}) unless @messagepanel?
 
     # Reset State If Requested
     gofmtsubscription = @gofmt.on('reset', (editor) => @resetState(editor))
@@ -175,6 +173,10 @@ class Dispatch
     @ready = true
     @emit('ready')
 
+  getMessagePanel: ->
+    @messagepanel ?=
+      new msgpanel.MessagePanelView({title: '<span class="icon-diff-added"></span> go-plus', rawTitle: true})
+
   displayGoInfo: (force) =>
     editor = atom.workspace?.getActiveTextEditor()
     unless force
@@ -183,81 +185,81 @@ class Dispatch
     @resetPanel()
     go = @goexecutable.current()
     if go? and go.executable? and go.executable.trim() isnt ''
-      @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Go:</b> ' + go.name + ' (@' + go.executable + ')', className: 'text-info'}))
+      @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Go:</b> ' + go.name + ' (@' + go.executable + ')', className: 'text-info'}))
 
       # gopath
       gopath = go.buildgopath()
       if gopath? and gopath.trim() isnt ''
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>GOPATH:</b> ' + gopath, className: 'text-highlight'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>GOPATH:</b> ' + gopath, className: 'text-highlight'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>GOPATH:</b> Not Set (You Should Try Launching Atom Using The Shell Commands...)', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>GOPATH:</b> Not Set (You Should Try Launching Atom Using The Shell Commands...)', className: 'text-error'}))
 
       # cover
       if go.cover()? and go.cover() isnt false
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Cover Tool:</b> ' + go.cover(), className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Cover Tool:</b> ' + go.cover(), className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Cover Tool:</b> Not Found', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Cover Tool:</b> Not Found', className: 'text-error'}))
 
       # vet
       if go.vet()? and go.vet() isnt false
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Vet Tool:</b> ' + go.vet(), className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Vet Tool:</b> ' + go.vet(), className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Vet Tool:</b> Not Found', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Vet Tool:</b> Not Found', className: 'text-error'}))
 
       # gofmt / goimports
       if go.format()? and go.format() isnt false
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Format Tool:</b> ' + go.format(), className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Format Tool:</b> ' + go.format(), className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Format Tool (' + atom.config.get('go-plus.formatTool') + '):</b> Not Found', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Format Tool (' + atom.config.get('go-plus.formatTool') + '):</b> Not Found', className: 'text-error'}))
 
       # golint
       if go.golint()? and go.golint() isnt false
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Lint Tool:</b> ' + go.golint(), className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Lint Tool:</b> ' + go.golint(), className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Lint Tool:</b> Not Found', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Lint Tool:</b> Not Found', className: 'text-error'}))
 
       # gocode
       if go.gocode()? and go.gocode() isnt false
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Gocode Tool:</b> ' + go.gocode(), className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Gocode Tool:</b> ' + go.gocode(), className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Gocode Tool:</b> Not Found', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Gocode Tool:</b> Not Found', className: 'text-error'}))
 
       # godef
       if go.godef()? and go.godef() isnt false
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Godef Tool:</b> ' + go.godef(), className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Godef Tool:</b> ' + go.godef(), className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Godef Tool:</b> Not Found', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Godef Tool:</b> Not Found', className: 'text-error'}))
 
       # gocode active
       if _.contains(atom.packages.getAvailablePackageNames(), 'autocomplete-plus')
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Gocode Status:</b> Enabled', className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Gocode Status:</b> Enabled', className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Gocode Status:</b> Not Enabled (autocomplete-plus needs to be installed and active; install it and restart)', className: 'text-warning'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Gocode Status:</b> Not Enabled (autocomplete-plus needs to be installed and active; install it and restart)', className: 'text-warning'}))
 
       # oracle
       if go.oracle()? and go.oracle() isnt false
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Oracle Tool: ' + go.oracle(), className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Oracle Tool: ' + go.oracle(), className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Oracle Tool: Not Found', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Oracle Tool: Not Found', className: 'text-error'}))
 
       # git
       if go.git()? and go.git() isnt false
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Git:</b> ' + go.git(), className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Git:</b> ' + go.git(), className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Git:</b> Not Found', className: 'text-warning'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Git:</b> Not Found', className: 'text-warning'}))
 
       # PATH
       thepath = if os.platform() is 'win32' then @env()?.Path else @env()?.PATH
       if thepath? and thepath.trim() isnt ''
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>PATH:</b> ' + thepath, className: 'text-subtle'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>PATH:</b> ' + thepath, className: 'text-subtle'}))
       else
-        @messagepanel.add(new PlainMessageView({raw: true, message: '<b>PATH:</b> Not Set', className: 'text-error'}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>PATH:</b> Not Set', className: 'text-error'}))
     else
-      @messagepanel.add(new PlainMessageView({raw: true, message: 'No Go Installations Were Found', className: 'text-error'}))
+      @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: 'No Go Installations Were Found', className: 'text-error'}))
 
-    @messagepanel.add(new PlainMessageView({raw: true, message: '<b>Atom:</b> ' + atom.appVersion + ' (' + os.platform() + ' ' + os.arch() + ' ' + os.release() + ')', className: 'text-info'}))
+    @getMessagePanel().add(new msgpanel.PlainMessageView({raw: true, message: '<b>Atom:</b> ' + atom.appVersion + ' (' + os.platform() + ' ' + os.arch() + ' ' + os.release() + ')', className: 'text-info'}))
 
-    @messagepanel.attach()
+    @getMessagePanel().attach()
 
   collectMessages: (messages) ->
     messages = _.flatten(messages) if messages? and _.size(messages) > 0
@@ -354,8 +356,8 @@ class Dispatch
     @resetPanel
     return unless messages?
     if messages.length <= 0 and atom.config.get('go-plus.showPanelWhenNoIssuesExist')
-      @messagepanel.add(new PlainMessageView({message: 'No Issues', className: 'text-success'}))
-      @messagepanel.attach()
+      @getMessagePanel().add(new msgpanel.PlainMessageView({message: 'No Issues', className: 'text-success'}))
+      @getMessagePanel().attach()
       return
     return unless messages.length > 0
     return unless atom.config.get('go-plus.showPanel')
@@ -374,11 +376,11 @@ class Dispatch
 
       if file is null and column is null and line is null
         # PlainMessageView
-        @messagepanel.add(new PlainMessageView({message: message.msg, className: className}))
+        @getMessagePanel().add(new msgpanel.PlainMessageView({message: message.msg, className: className}))
       else
         # LineMessageView
-        @messagepanel.add(new LineMessageView({file: file, line: line, character: column, message: message.msg, className: className}))
-    @messagepanel.attach() if atom?.workspace?
+        @getMessagePanel().add(new msgpanel.LineMessageView({file: file, line: line, character: column, message: message.msg, className: className}))
+    @getMessagePanel().attach() if atom?.workspace?
 
   isValidEditor: (editor) ->
     editor?.getGrammar()?.scopeName is 'source.go'
@@ -397,8 +399,8 @@ class Dispatch
       @emitReady()
       return
     @resetPanel()
-    @messagepanel.add(new PlainMessageView({message: 'Running `go get -u` to get required tools...', className: 'text-success'}))
-    @messagepanel.attach()
+    @getMessagePanel().add(new msgpanel.PlainMessageView({message: 'Running `go get -u` to get required tools...', className: 'text-success'}))
+    @getMessagePanel().attach()
     @goexecutable.on 'gettools-complete', =>
       @displayGoInfo(true)
       @emitReady()

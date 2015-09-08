@@ -43,6 +43,13 @@
   "devDependencies": {
     "coffeelint": ">=1.8.1"
   },
+  "consumedServices": {
+    "message-panel-service": {
+      "versions": {
+        "^1.0.0": "consumeMessagePanel"
+      }
+    }
+  },
   "providedServices": {
     "autocomplete.provider": {
       "versions": {

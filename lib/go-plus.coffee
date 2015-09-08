@@ -1,3 +1,5 @@
+pack = require '../package.json'
+
 module.exports =
   config:
     environmentOverridesConfiguration:
@@ -117,11 +119,14 @@ module.exports =
       order: 18
 
   activate: (state) ->
-    run = =>
-      @getDispatch()
-    setTimeout(run.bind(this), 0)
+    @activationListener = atom.packages.onDidActivatePackage (activePack) =>
+      if pack.name == activePack?.name
+        @activationListener?.dispose()
+        @getDispatch()
 
   deactivate: ->
+    @activationListener?.dispose()
+    @activationListener = null
     @provider?.dispose()
     @provider = null
     @dispatch?.destroy()
@@ -146,3 +151,7 @@ module.exports =
 
   provide: ->
     return @getProvider()
+
+  consumeMessagePanel: (service) ->
+    msgpanel = require './util/message-panel'
+    msgpanel.consumeMessagePanelService(service)
